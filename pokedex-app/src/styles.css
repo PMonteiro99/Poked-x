@@ -1,1 +1,41 @@
 /* You can add global styles to this file, and also import other style files */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100%;
+  background: #050816 !important;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+}
+
+app-root {
+  display: block;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #050816 !important;
+}
+
+/* wrappers comuns */
+router-outlet + *,
+app-root > *,
+main,
+.layout,
+.page,
+.wrapper,
+.content,
+.container-fluid {
+  background: transparent;
+}
+
+/* caso algum elemento global esteja criando a faixa */
+header,
+nav,
+.navbar,
+mat-toolbar {
+  margin: 0 !important;
+}
