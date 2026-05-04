@@ -105,17 +105,30 @@
     </div>
 
     <div class="pdx-sentinel">
-        @if (isLoading) {
-          <div class="pdx-loader">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        }
+      @if (isLoading) {
+        <div class="pdx-loader">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      }
 
-  @if (!hasMore && !searchTerm) {
-    <p class="pdx-end">Todos os Pokémon carregados.</p>
-  }
-</div>
+      @if (!hasMore && !searchTerm) {
+        <p class="pdx-end">Todos os Pokémon carregados.</p>
+      }
+    </div>
+
   </main>
+
+  @if (showBackToTop) {
+    <button
+      class="back-to-top"
+      type="button"
+      aria-label="Voltar ao topo"
+      (click)="scrollToTop()"
+    >
+      ↑
+    </button>
+  }
+
 </div>
