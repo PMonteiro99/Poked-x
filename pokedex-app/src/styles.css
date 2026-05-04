@@ -1,41 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
-html, body {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100%;
-  min-height: 100%;
-  background: #050816 !important;
-  overflow-x: hidden;
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+:root {
+  --bg: #b91c1c;
+  --bg-dark: #7f1d1d;
+
+  --pokedex-red: #dc2626;
+  --pokedex-red-dark: #991b1b;
+  --pokedex-yellow: #facc15;
+  --pokedex-blue: #38bdf8;
+  --pokedex-green: #22c55e;
+
+  --surface: #fff7ed;
+  --surface2: #fee2e2;
+  --panel: #f8fafc;
+
+  --border: #1f2937;
+  --text: #111827;
+  --text-muted: #64748b;
+
+  --danger: #ef4444;
+  --success: #16a34a;
+
+  --radius: 18px;
+  --font-main: 'Rajdhani', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html,
 body {
-  font-family: 'Nunito', sans-serif;
-}
-
-app-root {
-  display: block;
-  min-height: 100vh;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: #050816 !important;
-}
-
-/* wrappers comuns */
-router-outlet + *,
-app-root > *,
-main,
-.layout,
-.page,
-.wrapper,
-.content,
-.container-fluid {
-  background: transparent;
-}
-
-/* caso algum elemento global esteja criando a faixa */
-header,
-nav,
-.navbar,
-mat-toolbar {
-  margin: 0 !important;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255,255,255,0.18), transparent 24%),
+    linear-gradient(135deg, var(--pokedex-red), var(--bg-dark));
+  color: var(--text);
+  font-family: var(--font-main);
 }

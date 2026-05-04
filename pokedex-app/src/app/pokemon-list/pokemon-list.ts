@@ -1,91 +1,137 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import {
+  Component,
+  HostListener,
+  inject,
+  OnInit
+} from '@angular/core';
 
-interface Pokemon {
-  name: string;
-  type: string;
-  level: number;
-}
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+import { PokemonService, PokemonApiItem } from '../services/pokemon';
+import { TeamService } from '../services/team';
+import { Pokemon } from '../models/pokemon.model';
+import { PokemonCard } from '../pokemon-card/pokemon-card';
 
 @Component({
   selector: 'app-pokemon-list',
-  imports: [FormsModule, CommonModule],
+  imports: [CommonModule, FormsModule, PokemonCard],
   templateUrl: './pokemon-list.html',
   styleUrl: './pokemon-list.css'
 })
-export class PokemonList {
+export class PokemonList implements OnInit {
+  private pokemonService = inject(PokemonService);
+  public teamService = inject(TeamService);
 
-  private pokemonIds: Record<string, number> = {
-    bulbasaur: 1, ivysaur: 2, venusaur: 3,
-    charmander: 4, charmeleon: 5, charizard: 6,
-    squirtle: 7, wartortle: 8, blastoise: 9,
-    caterpie: 10, metapod: 11, butterfree: 12,
-    pikachu: 25, raichu: 26, clefairy: 35,
-    jigglypuff: 39, meowth: 52, psyduck: 54,
-    machop: 66, geodude: 74, gastly: 92,
-    gengar: 94, snorlax: 143, mewtwo: 150, mew: 151,
-    chikorita: 152, cyndaquil: 155, totodile: 158,
-    eevee: 133, vaporeon: 134, jolteon: 135, flareon: 136,
-    sawk: 539, pidgeot: 18, pidgey: 16
-  };
+  pokemons: Pokemon[] = [];
 
-  initialPokemons: Pokemon[] = [
-    { name: 'Pikachu', type: 'Electric', level: 25 },
-    { name: 'Charmander', type: 'Fire', level: 5 },
-    { name: 'Squirtle', type: 'Water', level: 55 },
-    { name: 'Bulbasaur', type: 'Grass', level: 8 }
-  ];
+  limit = 20;
+  offset = 0;
 
-  pokemons: Pokemon[] = [...this.initialPokemons];
+  isLoading = false;
+  hasMore = true;
 
-  newPokemonName = '';
-  newPokemonType = '';
-  newPokemonLevel = 1;
+  searchTerm = '';
+  feedbackMessage = '';
 
-  getPokemonId(name: string): number {
-    return this.pokemonIds[name.trim().toLowerCase()] ?? 0;
+  ngOnInit(): void {
+    this.loadPokemons();
   }
 
-  private normalizeText(value: string): string {
-    return value.trim().replace(/\s+/g, ' ');
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    if (this.searchTerm || this.isLoading || !this.hasMore) return;
+
+    const scrollTop = window.scrollY;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+
+    const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+
+    if (distanceFromBottom < 300) {
+      this.loadMore();
+    }
   }
 
-  private capitalize(value: string): string {
-    const normalized = this.normalizeText(value).toLowerCase();
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-  }
+  get filteredPokemons(): Pokemon[] {
+    const term = this.searchTerm.trim().toLowerCase();
 
-  addPokemon() {
-    const name = this.capitalize(this.newPokemonName);
-    const type = this.capitalize(this.newPokemonType);
-    const level = Math.min(100, Math.max(1, Number(this.newPokemonLevel) || 1));
+    if (!term) return this.pokemons;
 
-    if (!name || !type) return;
-
-    const alreadyExists = this.pokemons.some(
-      p => p.name.toLowerCase() === name.toLowerCase()
-    );
-
-    if (alreadyExists) return;
-
-    this.pokemons = [
-      ...this.pokemons,
-      { name, type, level }
-    ];
-
-    this.newPokemonName = '';
-    this.newPokemonType = '';
-    this.newPokemonLevel = 1;
-  }
-
-  removePokemon(name: string) {
-    this.pokemons = this.pokemons.filter(
-      p => p.name.toLowerCase() !== name.toLowerCase()
+    return this.pokemons.filter(pokemon =>
+      pokemon.name.toLowerCase().includes(term)
     );
   }
 
-  resetPokemons() {
-    this.pokemons = [...this.initialPokemons];
+  get teamIsFull(): boolean {
+    return this.teamService.getTeam().length >= this.teamService.getMaxTeamSize();
+  }
+
+  loadPokemons(): void {
+    if (this.isLoading || !this.hasMore) return;
+
+    this.isLoading = true;
+
+    this.pokemonService.getPokemons(this.limit, this.offset).subscribe({
+      next: data => {
+        const newPokemons = data.results.map((pokemon: PokemonApiItem) =>
+          this.mapApiPokemonToPokemon(pokemon)
+        );
+
+        this.pokemons = [...this.pokemons, ...newPokemons];
+
+        this.hasMore = data.results.length === this.limit;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.showFeedback('Erro ao carregar Pokémon. Tenta novamente.');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadMore(): void {
+    this.offset += this.limit;
+    this.loadPokemons();
+  }
+
+  addToTeam(pokemon: Pokemon): void {
+    const result = this.teamService.addPokemon(pokemon);
+
+    const messages: Record<string, string> = {
+      ok: `✅ ${pokemon.name} adicionado à equipa!`,
+      full: '⚠️ Equipa cheia! Máximo 6 Pokémon.',
+      duplicate: '✋ Este Pokémon já está na equipa.'
+    };
+
+    this.showFeedback(messages[result]);
+  }
+
+  removeFromTeam(pokemon: Pokemon): void {
+    this.teamService.removePokemon(pokemon);
+    this.showFeedback(`🗑️ ${pokemon.name} removido da equipa.`);
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+  }
+
+  private mapApiPokemonToPokemon(pokemon: PokemonApiItem): Pokemon {
+    const id = Number(pokemon.url.split('/').filter(Boolean).pop());
+
+    return {
+      id,
+      name: pokemon.name,
+      url: pokemon.url,
+      image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+    };
+  }
+
+  private showFeedback(message: string): void {
+    this.feedbackMessage = message;
+
+    setTimeout(() => {
+      this.feedbackMessage = '';
+    }, 2500);
   }
 }

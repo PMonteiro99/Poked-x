@@ -1,0 +1,31 @@
+<article class="poke-card" [class.in-team]="isInTeam">
+  <div class="poke-card-id">#{{ pokemon.id }}</div>
+
+  <div class="poke-card-img-wrap">
+    <div class="poke-card-bg-circle"></div>
+
+    <img
+      [src]="pokemon.image"
+      [alt]="pokemon.name"
+      class="poke-card-img"
+      onerror="this.style.opacity='0'"
+    />
+  </div>
+
+  <h3 class="poke-card-name">{{ pokemon.name | titlecase }}</h3>
+
+  <button
+    class="poke-card-btn"
+    [class.added]="isInTeam"
+    [disabled]="isInTeam || teamIsFull"
+    (click)="onAdd()"
+  >
+    @if (isInTeam) {
+      ✓ Na equipa
+    } @else if (teamIsFull) {
+      Equipa cheia
+    } @else {
+      + Adicionar
+    }
+  </button>
+</article>
