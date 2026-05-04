@@ -22,4 +22,8 @@ export class PokemonService {
       `${this.apiUrl}?limit=${limit}&offset=${offset}`
     );
   }
+
+  getPokemonByName(name: string) {
+    return this.http.get<any>(`${this.apiUrl}/${name.toLowerCase()}`);
+  }
 }

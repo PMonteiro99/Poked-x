@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   HostListener,
   inject,
@@ -7,6 +8,7 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 
 import { PokemonService, PokemonApiItem } from '../services/pokemon';
 import { TeamService } from '../services/team';
@@ -21,6 +23,8 @@ import { PokemonCard } from '../pokemon-card/pokemon-card';
 })
 export class PokemonList implements OnInit {
   private pokemonService = inject(PokemonService);
+  private cdr = inject(ChangeDetectorRef);
+
   public teamService = inject(TeamService);
 
   pokemons: Pokemon[] = [];
@@ -30,6 +34,7 @@ export class PokemonList implements OnInit {
 
   isLoading = false;
   hasMore = true;
+  showBackToTop = false;
 
   searchTerm = '';
   feedbackMessage = '';
@@ -39,16 +44,15 @@ export class PokemonList implements OnInit {
   }
 
   @HostListener('window:scroll')
-  onWindowScroll(): void {
+  onScroll(): void {
+    this.showBackToTop = window.scrollY > 500;
+
     if (this.searchTerm || this.isLoading || !this.hasMore) return;
 
-    const scrollTop = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
+    const scrollPosition = window.scrollY + window.innerHeight;
+    const pageHeight = document.documentElement.scrollHeight;
 
-    const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-
-    if (distanceFromBottom < 300) {
+    if (pageHeight - scrollPosition < 350) {
       this.loadMore();
     }
   }
@@ -71,26 +75,34 @@ export class PokemonList implements OnInit {
     if (this.isLoading || !this.hasMore) return;
 
     this.isLoading = true;
+    this.cdr.detectChanges();
 
-    this.pokemonService.getPokemons(this.limit, this.offset).subscribe({
-      next: data => {
-        const newPokemons = data.results.map((pokemon: PokemonApiItem) =>
-          this.mapApiPokemonToPokemon(pokemon)
-        );
+    this.pokemonService.getPokemons(this.limit, this.offset)
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: data => {
+          const newPokemons = data.results.map((pokemon: PokemonApiItem) =>
+            this.mapApiPokemonToPokemon(pokemon)
+          );
 
-        this.pokemons = [...this.pokemons, ...newPokemons];
-
-        this.hasMore = data.results.length === this.limit;
-        this.isLoading = false;
-      },
-      error: () => {
-        this.showFeedback('Erro ao carregar Pokémon. Tenta novamente.');
-        this.isLoading = false;
-      }
-    });
+          this.pokemons = [...this.pokemons, ...newPokemons];
+          this.hasMore = data.results.length === this.limit;
+        },
+        error: error => {
+          console.error('Erro ao carregar Pokémon:', error);
+          this.showFeedback('Erro ao carregar Pokémon. Verifica a internet.');
+        }
+      });
   }
 
   loadMore(): void {
+    if (this.isLoading || !this.hasMore || this.searchTerm) return;
+
     this.offset += this.limit;
     this.loadPokemons();
   }
@@ -116,6 +128,13 @@ export class PokemonList implements OnInit {
     this.searchTerm = '';
   }
 
+  scrollToTop(): void {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
   private mapApiPokemonToPokemon(pokemon: PokemonApiItem): Pokemon {
     const id = Number(pokemon.url.split('/').filter(Boolean).pop());
 
@@ -132,6 +151,7 @@ export class PokemonList implements OnInit {
 
     setTimeout(() => {
       this.feedbackMessage = '';
+      this.cdr.detectChanges();
     }, 2500);
   }
 }

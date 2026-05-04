@@ -1,4 +1,8 @@
-<article class="poke-card" [class.in-team]="isInTeam">
+<article
+  class="poke-card"
+  [class.in-team]="isInTeam"
+  [routerLink]="['/pokemon', pokemon.name]"
+>
   <div class="poke-card-id">#{{ pokemon.id }}</div>
 
   <div class="poke-card-img-wrap">
@@ -16,9 +20,10 @@
 
   <button
     class="poke-card-btn"
+    type="button"
     [class.added]="isInTeam"
     [disabled]="isInTeam || teamIsFull"
-    (click)="onAdd()"
+    (click)="onAdd($event)"
   >
     @if (isInTeam) {
       ✓ Na equipa

@@ -1,0 +1,147 @@
+<div class="detail-page">
+
+  <!-- HEADER -->
+  <header class="detail-header">
+    <button
+      class="back-btn"
+      type="button"
+      (click)="goBack()"
+    >
+      ← Voltar
+    </button>
+
+    <a routerLink="/" class="home-link">
+      Pokédex
+    </a>
+  </header>
+
+  <!-- TOAST -->
+  @if (feedbackMessage) {
+    <div class="detail-toast">
+      {{ feedbackMessage }}
+    </div>
+  }
+
+  <!-- LOADING -->
+  @if (isLoading) {
+    <section class="detail-loading">
+      <div class="loader-dot"></div>
+      <p>A carregar Pokémon...</p>
+    </section>
+  }
+
+  <!-- ERROR -->
+  @if (errorMessage && !isLoading) {
+    <section class="detail-error">
+      <h2>Erro</h2>
+      <p>{{ errorMessage }}</p>
+
+      <button type="button" (click)="goBack()">
+        Voltar
+      </button>
+    </section>
+  }
+
+  <!-- CONTENT -->
+  @if (pokemon && !isLoading) {
+    <main class="detail-card">
+
+      <!-- LEFT SIDE -->
+      <section class="pokemon-hero">
+
+        <div class="pokemon-number">
+          #{{ pokemon.id }}
+        </div>
+
+        <div class="pokemon-image-frame">
+          <img
+            [src]="getMainImage()"
+            [alt]="pokemon.name"
+          />
+        </div>
+
+        <h1>
+          {{ pokemon.name | titlecase }}
+        </h1>
+
+        <!-- TYPES -->
+        <div class="type-list">
+        @for (type of pokemon.types; track type.type.name) {
+            <span
+            class="type-pill"
+            [class]="getTypeClass(type.type.name)"
+            >
+            {{ type.type.name | titlecase }}
+            </span>
+        }
+</div>
+        <!-- ADD TO TEAM -->
+        <button
+          class="team-btn"
+          type="button"
+          [disabled]="isCurrentPokemonInTeam()"
+          (click)="addToTeam()"
+        >
+          @if (isCurrentPokemonInTeam()) {
+            ✓ Já está na equipa
+          } @else {
+            + Adicionar à equipa
+          }
+        </button>
+
+      </section>
+
+      <!-- RIGHT SIDE -->
+      <section class="pokemon-info">
+
+        <!-- BASIC INFO -->
+        <div class="info-grid">
+
+          <div class="info-box">
+            <span>Altura</span>
+            <strong>{{ pokemon.height / 10 }} m</strong>
+          </div>
+
+          <div class="info-box">
+            <span>Peso</span>
+            <strong>{{ pokemon.weight / 10 }} kg</strong>
+          </div>
+
+          <div class="info-box">
+            <span>Experiência</span>
+            <strong>{{ pokemon.base_experience }}</strong>
+          </div>
+
+        </div>
+
+        <!-- STATS -->
+        <h2>Stats</h2>
+
+        <div class="stats-list">
+          @for (stat of pokemon.stats; track stat.stat.name) {
+
+            <div class="stat-row">
+
+              <div class="stat-top">
+                <span>{{ stat.stat.name | titlecase }}</span>
+                <strong>{{ stat.base_stat }}</strong>
+              </div>
+
+              <div class="stat-bar">
+                <div
+                  class="stat-fill"
+                  [style.width.%]="getStatPercent(stat.base_stat)"
+                ></div>
+              </div>
+
+            </div>
+
+          }
+        </div>
+
+      </section>
+
+    </main>
+  }
+
+</div>
